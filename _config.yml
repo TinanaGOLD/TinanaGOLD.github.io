@@ -1,5 +1,5 @@
-name: Hello! Here is Tina
-author: 
+name: Tina的电子妙妙屋
+author: Tina
 url: https://TinanaGOLD.github.io
 baseurl: 
 resume_site: 
@@ -18,5 +18,5 @@ comments :
     clientID : 
     clientSecret : 
     repo : 
-    owner : 
+    owner : Tina
     admin : 
