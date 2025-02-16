@@ -1,9 +1,9 @@
-name: 
+name: Hello! Here is Tina
 author: 
-url: 
+url: https://TinanaGOLD.github.io
 baseurl: 
 resume_site: 
-description: 
+description: Welcome~
 github_username: 
 github: 
 plugins: [jekyll-paginate]
