@@ -2,7 +2,7 @@
 layout: post
 title: Start！妙妙屋的由来？
 date: 25-02-17 00:00:00
-category: Tina的胡言乱语
+category: tutorial
 thumbnail: /style/image/thumbnail.png
 icon: chat
 ---
