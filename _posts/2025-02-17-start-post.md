@@ -1,7 +1,7 @@
 ---
 layout: post
 title: Start！妙妙屋的由来？
-date: 25-02-17 00:00:00
+date: 25-02-17 00:00:00 +0800
 category: tutorial
 thumbnail: /style/image/thumbnail.png
 icon: chat
@@ -13,7 +13,7 @@ icon: chat
 
 ## 网站的由来？
 
-emmmm就是Tina突然想建立一个网站
+emmm就是Tina突然想建立一个网站
 于是去查了下免费且简单的建站方式“GitHub + Jekyll Themes” 于是就动手做了！
 
 ## 建站攻略！
