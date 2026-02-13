@@ -1,0 +1,1081 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的待办清单</title>
+    <style>
+        /* 全局样式重置 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Microsoft YaHei", sans-serif;
+        }
+
+        /* 页面背景 */
+        body {
+            background: linear-gradient(135deg, #e8f4f8 0%, #fdf2f8 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        /* 主容器 */
+        .todo-container {
+            max-width: 500px;
+            margin: 0 auto;
+            background: #fff;
+            border: 4px solid #333;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 8px 8px 0 #e0e0e0;
+        }
+
+        /* 标题样式 */
+        .todo-title {
+            text-align: center;
+            font-size: 28px;
+            font-family: "Comic Sans MS", "Marker Felt", "微软雅黑", sans-serif;
+            color: #3182ce;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 0 #bee3f8;
+            letter-spacing: 2px;
+        }
+
+        /* 输入区域 */
+        .input-area {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+
+        .task-input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 3px solid #90cdf4;
+            border-radius: 4px;
+            font-size: 16px;
+            outline: none;
+        }
+
+        /* 通用按钮样式 */
+        .btn {
+            padding: 12px 18px;
+            border: 3px solid #333;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: all 0.2s;
+            white-space: nowrap; /* 按钮文字不换行，防止变形 */
+            flex-shrink: 0; /* 防止按钮收缩 */
+        }
+
+        .add-btn {
+            background: #90cdf4;
+            color: #fff;
+        }
+
+        .add-btn:hover {
+            background: #4299e1;
+            transform: translate(1px, 1px);
+        }
+
+        /* 任务列表标题栏（标题+清空按钮） */
+        .task-list-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .task-list-title {
+            font-size: 20px;
+            color: #2d3748;
+            border-bottom: 2px dashed #90cdf4;
+            padding-bottom: 5px;
+            margin-bottom: 0;
+        }
+
+        /* 清空列表按钮 */
+        .clear-btn {
+            background: #fed7d7;
+            color: #c53030;
+            padding: 8px 12px;
+            font-size: 12px;
+        }
+
+        .clear-btn:hover {
+            background: #fc8181;
+            transform: translate(1px, 1px);
+        }
+
+        /* 总结按钮组 */
+        .summary-btn-group {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .summary-btn {
+            background: #fbb6ce;
+            color: #2d3748;
+        }
+
+        .summary-btn:hover {
+            background: #f687b3;
+            transform: translate(1px, 1px);
+        }
+
+        .reset-btn {
+            background: #ccc;
+            color: #666;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        .reset-btn.enabled {
+            background: #90cdf4;
+            color: #fff;
+            cursor: pointer;
+            opacity: 1;
+        }
+
+        .reset-btn.enabled:hover {
+            background: #4299e1;
+            transform: translate(1px, 1px);
+        }
+
+        /* 任务项样式 */
+        .task-item {
+            display: flex;
+            align-items: flex-start; 
+            justify-content: space-between;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            background: #f8f9fa;
+        }
+
+        /* 任务内容容器（星标+文字+标识+计时器） */
+        .task-content {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            width: calc(100% - 120px); /* 预留按钮区域宽度，防止文字挤压 */
+        }
+
+        /* 星标+任务文字容器 */
+        .task-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* 星标按钮（圆角可爱版） */
+        .star-btn {
+            cursor: pointer;
+            font-size: 18px;
+            color: #ccc; /* 默认浅灰色 */
+            transition: color 0.2s;
+            /* 圆角处理：用伪元素模拟圆角星星，替代尖锐的★ */
+            position: relative;
+            width: 20px;
+            height: 20px;
+        }
+
+        .star-btn::before {
+            content: '★';
+            position: absolute;
+            top: 0;
+            left: 0;
+            font-size: 18px;
+            /* 轻微模糊+缩放，让星星边缘更圆润 */
+            filter: blur(0.5px);
+            transform: scale(0.95);
+        }
+
+        .star-btn.active::before {
+            color: #ffe485; /* 激活后浅黄色 */
+            text-shadow: 1px 1px 2px #f6ad55; /* 增加阴影更可爱 */
+        }
+
+        .task-text {
+            font-size: 16px;
+            color: #2d3748;
+            word-break: break-all; /* 文字换行，防止溢出 */
+            flex: 1;
+        }
+
+        /* 进行中标识 + 计时器 + 暂停按钮容器 */
+        .progress-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* 进行中标识 */
+        .progress-tag {
+            font-size: 12px;
+            color: #3182ce;
+            font-weight: bold;
+        }
+
+        /* 计时器/耗时样式 */
+        .timer {
+            font-size: 12px;
+            color: #e53e3e;
+        }
+
+        /* 暂停/继续按钮 */
+        .pause-btn {
+            padding: 2px 8px;
+            border: 2px solid #333;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+            background: #fefcbf;
+            color: #744210;
+            transition: all 0.2s;
+        }
+
+        .pause-btn:hover {
+            background: #faf089;
+            transform: translate(1px, 1px);
+        }
+
+        .task-btns {
+            display: flex;
+            gap: 8px;
+            flex-shrink: 0; /* 按钮容器不收缩，防止变形 */
+        }
+
+        /* 开始按钮样式 */
+        .start-btn {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+
+        .start-btn:hover {
+            background: #9ae6b4;
+            transform: translate(1px, 1px);
+        }
+
+        /* 完成/已完成按钮样式（统一大小） */
+        .complete-btn {
+            background: #fefcbf;
+            color: #744210;
+            /* 强制和其他按钮同尺寸 */
+            padding: 12px 18px;
+            font-size: 14px;
+        }
+
+        .complete-btn:hover {
+            background: #faf089;
+            transform: translate(1px, 1px);
+        }
+
+        .complete-btn:disabled {
+            background: #fefcbf;
+            color: #744210;
+            cursor: not-allowed;
+            opacity: 0.7;
+            transform: none; /* 禁用时取消位移 */
+        }
+
+        /* 删除按钮样式 */
+        .delete-btn {
+            background: #fed7d7;
+            color: #c53030;
+        }
+
+        .delete-btn:hover {
+            background: #fc8181;
+            transform: translate(1px, 1px);
+        }
+
+        /* 今日总结区域 */
+        .summary-area {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 3px solid #90cdf4;
+        }
+
+        .summary-title {
+            font-size: 20px;
+            color: #2d3748;
+            margin-bottom: 15px;
+        }
+
+        .summary-text {
+            font-size: 16px;
+            color: #4a5568;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        /* 饼图容器 */
+        .chart-container {
+            width: 100%;
+            height: 250px;
+            margin-top: 10px;
+            margin-bottom: 20px;
+        }
+
+        /* 日期样式 - 改为和标题一致的字体 */
+        .date-text {
+            font-size: 16px;
+            font-family: "Comic Sans MS", "Marker Felt", "微软雅黑", sans-serif;
+            color: #3182ce;
+            text-shadow: 1px 1px 0 #bee3f8;
+            letter-spacing: 2px;
+            display: block;
+            text-align: right;
+            margin-top: 10px;
+        }
+
+        /* 响应式适配 */
+        @media (max-width: 375px) {
+            .todo-title {
+                font-size: 24px;
+            }
+            .btn {
+                padding: 10px 14px;
+                font-size: 12px;
+            }
+            .complete-btn {
+                padding: 10px 14px;
+                font-size: 12px;
+            }
+            .task-input {
+                font-size: 14px;
+                padding: 10px 12px;
+            }
+            .chart-container {
+                height: 200px;
+            }
+            .task-content {
+                width: calc(100% - 100px);
+            }
+            .pause-btn {
+                padding: 2px 6px;
+                font-size: 10px;
+            }
+            .clear-btn {
+                padding: 6px 8px;
+                font-size: 10px;
+            }
+            .date-text {
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="todo-container">
+        <h1 class="todo-title">Today's To-do-list</h1>
+
+        <!-- 输入区域 -->
+        <div class="input-area">
+            <input type="text" class="task-input" placeholder="输入新任务（最多20字）..." maxlength="20">
+            <button class="btn add-btn">添加</button>
+        </div>
+
+        <!-- 任务列表标题栏（标题+清空按钮） -->
+        <div class="task-list-header">
+            <h2 class="task-list-title">任务列表</h2>
+            <button class="btn clear-btn">清空列表</button>
+        </div>
+        
+        <!-- 任务列表区域 -->
+        <div class="task-list">
+            <!-- 任务项通过JS动态添加 -->
+        </div>
+
+        <!-- 总结按钮组（生成+重置） -->
+        <div class="summary-btn-group">
+            <button class="btn summary-btn">生成今日总结</button>
+            <button class="btn reset-btn" disabled>重置今日总结</button>
+        </div>
+
+        <!-- 今日总结区域 -->
+        <div class="summary-area">
+            <h2 class="summary-title">今日总结</h2>
+            <p class="summary-text">请先完成任务，再生成总结</p>
+            <!-- 饼图容器（Canvas） -->
+            <div class="chart-container">
+                <canvas id="taskChart"></canvas>
+            </div>
+            
+            <!-- 仅保留日期，删除"你今天超棒哒" -->
+            <div class="date-text" id="currentDate"></div>
+        </div>
+    </div>
+
+    <script>
+        // 1. 获取核心DOM元素
+        const taskInput = document.querySelector('.task-input');
+        const addButton = document.querySelector('.add-btn');
+        const taskList = document.querySelector('.task-list');
+        const summaryButton = document.querySelector('.summary-btn');
+        const resetButton = document.querySelector('.reset-btn');
+        const summaryText = document.querySelector('.summary-text');
+        const taskChart = document.getElementById('taskChart');
+        const ctx = taskChart.getContext('2d');
+        const clearButton = document.querySelector('.clear-btn'); // 清空列表按钮
+        const dateElement = document.getElementById('currentDate'); // 日期元素
+
+        // 存储已完成任务的数组
+        const completedTasks = [];
+        // 最大任务文字数（测试验证20字内按钮不会变形）
+        const MAX_TASK_LENGTH = 20;
+
+        // 初始化显示当前日期
+        initCurrentDate();
+        // 页面加载时从localStorage读取任务列表
+        loadTasksFromLocalStorage();
+
+        // 2. 绑定添加按钮点击事件
+        addButton.addEventListener('click', addNewTask);
+        taskInput.addEventListener('keypress', (e) => e.key === 'Enter' && addNewTask());
+
+        // 绑定清空列表按钮点击事件
+        clearButton.addEventListener('click', clearTaskList);
+
+        // --------------------------
+        // 核心：localStorage 数据持久化相关函数
+        // --------------------------
+        
+        /**
+         * 保存任务列表到localStorage
+         * 原理：
+         * 1. 遍历页面上所有任务项，提取关键数据（内容、完成状态）
+         * 2. 转换为JSON字符串（localStorage只能存储字符串）
+         * 3. 用"todoList"作为key存入localStorage
+         */
+        function saveTasksToLocalStorage() {
+            // 收集所有任务数据
+            const tasks = [];
+            const taskItems = taskList.querySelectorAll('.task-item');
+            
+            taskItems.forEach(item => {
+                const taskText = item.querySelector('.task-text').textContent;
+                const isCompleted = item.dataset.completed === 'true';
+                
+                tasks.push({
+                    content: taskText,
+                    completed: isCompleted
+                });
+            });
+            
+            // 转换为JSON字符串并保存
+            localStorage.setItem('todoList', JSON.stringify(tasks));
+        }
+
+        /**
+         * 从localStorage加载任务列表
+         * 原理：
+         * 1. 从localStorage读取"todoList"对应的字符串
+         * 2. 转换为JavaScript数组（JSON.parse）
+         * 3. 遍历数组，重新创建任务项并添加到页面
+         */
+        function loadTasksFromLocalStorage() {
+            // 读取存储的数据
+            const savedTasks = localStorage.getItem('todoList');
+            
+            // 如果没有保存的数据，直接返回
+            if (!savedTasks) return;
+            
+            // 解析JSON字符串为数组
+            const tasks = JSON.parse(savedTasks);
+            
+            // 遍历任务数组，重新创建任务项
+            tasks.forEach(task => {
+                // 创建任务项DOM结构
+                const taskItem = document.createElement('div');
+                taskItem.className = 'task-item';
+                taskItem.dataset.completed = task.completed ? 'true' : 'false';
+                taskItem.dataset.starred = 'false';
+
+                // 创建任务内容容器
+                const taskContentWrap = document.createElement('div');
+                taskContentWrap.className = 'task-content';
+
+                // 创建任务头部（星标+文字）
+                const taskHeader = document.createElement('div');
+                taskHeader.className = 'task-header';
+
+                // 星标按钮
+                const starBtn = document.createElement('span');
+                starBtn.className = 'star-btn';
+                taskHeader.appendChild(starBtn);
+
+                // 任务文本
+                const taskText = document.createElement('span');
+                taskText.className = 'task-text';
+                taskText.textContent = task.content;
+                
+                // 如果是已完成任务，添加划线样式
+                if (task.completed) {
+                    taskText.style.textDecoration = 'line-through';
+                    taskText.style.color = '#718096';
+                }
+                
+                taskHeader.appendChild(taskText);
+                taskContentWrap.appendChild(taskHeader);
+
+                // 创建按钮容器
+                const taskBtns = document.createElement('div');
+                taskBtns.className = 'task-btns';
+
+                // 根据完成状态决定显示的按钮
+                if (task.completed) {
+                    // 已完成任务显示"已完成"按钮
+                    const completeBtn = document.createElement('button');
+                    completeBtn.className = 'btn complete-btn';
+                    completeBtn.textContent = '已完成';
+                    completeBtn.disabled = true;
+                    completeBtn.style.cursor = 'not-allowed';
+                    completeBtn.style.opacity = '0.7';
+                    taskBtns.appendChild(completeBtn);
+                    
+                    // 记录到已完成任务数组
+                    completedTasks.push({
+                        name: task.content,
+                        time: 0 // 加载的任务默认耗时0，可根据实际需求调整
+                    });
+                } else {
+                    // 未完成任务显示"开始"按钮
+                    const startBtn = document.createElement('button');
+                    startBtn.className = 'btn start-btn';
+                    startBtn.textContent = '开始';
+                    taskBtns.appendChild(startBtn);
+                    
+                    // 绑定开始按钮事件（复用原有逻辑）
+                    bindStartButtonEvent(startBtn, taskItem, taskText, taskContentWrap, taskBtns, task.content);
+                }
+
+                // 删除按钮（所有任务都有）
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'btn delete-btn';
+                deleteBtn.textContent = '删除';
+                taskBtns.appendChild(deleteBtn);
+
+                // 绑定删除按钮事件
+                deleteBtn.addEventListener('click', () => {
+                    taskList.removeChild(taskItem);
+                    // 从已完成数组移除
+                    const index = completedTasks.findIndex(item => item.name === task.content);
+                    if (index !== -1) {
+                        completedTasks.splice(index, 1);
+                    }
+                    // 保存到localStorage
+                    saveTasksToLocalStorage();
+                    // 如果删除后无完成任务，禁用重置按钮
+                    if (completedTasks.length === 0) {
+                        resetButton.disabled = true;
+                        resetButton.classList.remove('enabled');
+                    }
+                });
+
+                // 绑定星标按钮事件
+                starBtn.addEventListener('click', () => {
+                    if (taskItem.dataset.starred === 'false') {
+                        starBtn.classList.add('active');
+                        taskItem.dataset.starred = 'true';
+                        taskList.insertBefore(taskItem, taskList.firstChild);
+                    } else {
+                        starBtn.classList.remove('active');
+                        taskItem.dataset.starred = 'false';
+                        reorderTasks();
+                    }
+                    // 保存到localStorage
+                    saveTasksToLocalStorage();
+                });
+
+                // 组装任务项
+                taskItem.appendChild(taskContentWrap);
+                taskItem.appendChild(taskBtns);
+
+                // 添加到任务列表
+                taskList.appendChild(taskItem);
+            });
+            
+            // 启用重置按钮（如果有已完成任务）
+            if (completedTasks.length > 0) {
+                resetButton.disabled = false;
+                resetButton.classList.add('enabled');
+            }
+        }
+
+        // 3. 核心函数：添加新任务
+        function addNewTask() {
+            // 3.1 清理并获取输入内容
+            const taskContent = taskInput.value.trim();
+            
+            // 3.2 空值/字数验证
+            if (!taskContent) {
+                alert('请输入有效的任务内容！');
+                return;
+            }
+            if (taskContent.length > MAX_TASK_LENGTH) {
+                alert(`任务文字不能超过${MAX_TASK_LENGTH}字！`);
+                return;
+            }
+
+            // 3.3 创建任务项容器
+            const taskItem = document.createElement('div');
+            taskItem.className = 'task-item';
+            taskItem.dataset.completed = 'false'; // 标记是否完成
+            taskItem.dataset.starred = 'false'; // 标记是否星标
+
+            // 3.4 创建任务内容容器
+            const taskContentWrap = document.createElement('div');
+            taskContentWrap.className = 'task-content';
+
+            // 3.5 创建任务头部（仅保留星标+文字）
+            const taskHeader = document.createElement('div');
+            taskHeader.className = 'task-header';
+
+            // 3.6 星标按钮（圆角可爱版）
+            const starBtn = document.createElement('span');
+            starBtn.className = 'star-btn';
+            taskHeader.appendChild(starBtn);
+
+            // 3.7 任务文本
+            const taskText = document.createElement('span');
+            taskText.className = 'task-text';
+            taskText.textContent = taskContent;
+            taskHeader.appendChild(taskText);
+
+            // 3.8 组装任务内容容器
+            taskContentWrap.appendChild(taskHeader);
+
+            // 3.9 创建按钮容器
+            const taskBtns = document.createElement('div');
+            taskBtns.className = 'task-btns';
+
+            // 3.10 初始按钮：开始、删除
+            const startBtn = document.createElement('button');
+            startBtn.className = 'btn start-btn';
+            startBtn.textContent = '开始';
+
+            const deleteBtn = document.createElement('button');
+            deleteBtn.className = 'btn delete-btn';
+            deleteBtn.textContent = '删除';
+
+            // 3.11 组装按钮容器
+            taskBtns.appendChild(startBtn);
+            taskBtns.appendChild(deleteBtn);
+
+            // 3.12 组装整个任务项
+            taskItem.appendChild(taskContentWrap);
+            taskItem.appendChild(taskBtns);
+
+            // 3.13 插入新任务到未完成任务顶部
+            insertNewTaskToTop(taskItem);
+
+            // 3.14 清空输入框
+            taskInput.value = '';
+
+            // --------------------------
+            // 4. 星标置顶功能
+            // --------------------------
+            starBtn.addEventListener('click', () => {
+                if (taskItem.dataset.starred === 'false') {
+                    // 激活星标
+                    starBtn.classList.add('active');
+                    taskItem.dataset.starred = 'true';
+                    // 移到列表最顶部
+                    taskList.insertBefore(taskItem, taskList.firstChild);
+                } else {
+                    // 取消星标
+                    starBtn.classList.remove('active');
+                    taskItem.dataset.starred = 'false';
+                    // 重新排序：移到未完成任务顶部（非星标）
+                    reorderTasks();
+                }
+                // 保存到localStorage
+                saveTasksToLocalStorage();
+            });
+
+            // --------------------------
+            // 5. 删除任务事件
+            // --------------------------
+            deleteBtn.addEventListener('click', () => {
+                taskList.removeChild(taskItem);
+                // 从已完成数组移除
+                const index = completedTasks.findIndex(item => item.name === taskContent);
+                if (index !== -1) {
+                    completedTasks.splice(index, 1);
+                }
+                // 保存到localStorage
+                saveTasksToLocalStorage();
+                // 如果删除后无完成任务，禁用重置按钮
+                if (completedTasks.length === 0) {
+                    resetButton.disabled = true;
+                    resetButton.classList.remove('enabled');
+                }
+            });
+
+            // --------------------------
+            // 6. 开始任务事件（绑定复用函数）
+            // --------------------------
+            bindStartButtonEvent(startBtn, taskItem, taskText, taskContentWrap, taskBtns, taskContent);
+            
+            // 添加新任务后保存到localStorage
+            saveTasksToLocalStorage();
+        }
+
+        /**
+         * 复用开始按钮事件绑定逻辑（用于新添加和加载的任务）
+         * @param {HTMLElement} startBtn 开始按钮元素
+         * @param {HTMLElement} taskItem 任务项容器
+         * @param {HTMLElement} taskText 任务文本元素
+         * @param {HTMLElement} taskContentWrap 任务内容容器
+         * @param {HTMLElement} taskBtns 按钮容器
+         * @param {string} taskContent 任务内容文本
+         */
+        function bindStartButtonEvent(startBtn, taskItem, taskText, taskContentWrap, taskBtns, taskContent) {
+            let timer = null; // 计时器
+            let startTime = null; // 开始时间戳
+            let pauseTime = 0; // 暂停累计时长（毫秒）
+            let isPaused = false; // 暂停状态标记
+            let progressContainer = null; // 进行中容器
+            let progressTag = null; // 进行中标识
+            let timerElement = null; // 计时器元素
+            let pauseBtn = null; // 暂停/继续按钮
+            let completeBtn = null; // 完成按钮
+
+            startBtn.addEventListener('click', () => {
+                // 记录开始时间戳（北京时间，毫秒）
+                startTime = Date.now();
+                pauseTime = 0;
+                isPaused = false;
+
+                // 替换按钮：开始→完成
+                taskBtns.removeChild(startBtn);
+                completeBtn = document.createElement('button');
+                completeBtn.className = 'btn complete-btn';
+                completeBtn.textContent = '完成';
+                taskBtns.insertBefore(completeBtn, taskBtns.firstChild);
+
+                // 创建进行中容器（标识+计时器+暂停按钮）
+                progressContainer = document.createElement('div');
+                progressContainer.className = 'progress-container';
+
+                // 添加进行中标识
+                progressTag = document.createElement('span');
+                progressTag.className = 'progress-tag';
+                progressTag.textContent = '进行中';
+                progressContainer.appendChild(progressTag);
+
+                // 添加计时器元素
+                timerElement = document.createElement('span');
+                timerElement.className = 'timer';
+                timerElement.textContent = '00:00';
+                progressContainer.appendChild(timerElement);
+
+                // 添加暂停按钮
+                pauseBtn = document.createElement('button');
+                pauseBtn.className = 'pause-btn';
+                pauseBtn.textContent = '暂停';
+                progressContainer.appendChild(pauseBtn);
+
+                // 添加到任务内容容器
+                taskContentWrap.appendChild(progressContainer);
+
+                // 启动计时器（精准计算时间差）
+                updateTimer();
+                timer = setInterval(updateTimer, 1000);
+
+                // --------------------------
+                // 6.1 暂停/继续计时功能
+                // --------------------------
+                pauseBtn.addEventListener('click', () => {
+                    if (!isPaused) {
+                        // 暂停计时
+                        isPaused = true;
+                        pauseTime += Date.now() - startTime; // 累计暂停前的时长
+                        clearInterval(timer);
+                        pauseBtn.textContent = '继续';
+                        progressTag.textContent = '已暂停';
+                    } else {
+                        // 继续计时
+                        isPaused = false;
+                        startTime = Date.now(); // 重置开始时间
+                        timer = setInterval(updateTimer, 1000);
+                        pauseBtn.textContent = '暂停';
+                        progressTag.textContent = '进行中';
+                    }
+                });
+
+                // --------------------------
+                // 7. 完成任务事件
+                // --------------------------
+                completeBtn.addEventListener('click', () => {
+                    // 停止计时
+                    clearInterval(timer);
+
+                    // 标记任务为已完成
+                    taskText.style.textDecoration = 'line-through';
+                    taskText.style.color = '#718096';
+                    taskItem.dataset.completed = 'true';
+
+                    // 计算总耗时（精准时间差）
+                    let totalMs;
+                    if (isPaused) {
+                        totalMs = pauseTime;
+                    } else {
+                        totalMs = pauseTime + (Date.now() - startTime);
+                    }
+                    const totalSeconds = Math.floor(totalMs / 1000);
+                    const totalMinutes = (totalSeconds / 60).toFixed(1);
+                    const finalMinutes = Math.floor(totalSeconds / 60);
+                    const finalSeconds = totalSeconds % 60;
+                    const formatFinalTime = `${finalMinutes.toString().padStart(2, '0')}:${finalSeconds.toString().padStart(2, '0')}`;
+
+                    // 调整按钮文字为"已完成"（统一大小）
+                    completeBtn.textContent = '已完成';
+                    completeBtn.disabled = true;
+                    completeBtn.style.cursor = 'not-allowed';
+                    completeBtn.style.opacity = '0.7';
+
+                    // 移除暂停按钮，更新计时器显示
+                    progressContainer.removeChild(pauseBtn);
+                    progressContainer.removeChild(progressTag);
+                    timerElement.textContent = `耗时 ${formatFinalTime}`;
+
+                    // 存储已完成任务
+                    const taskIndex = completedTasks.findIndex(item => item.name === taskContent);
+                    if (taskIndex === -1) {
+                        completedTasks.push({
+                            name: taskContent,
+                            time: parseFloat(totalMinutes)
+                        });
+                    } else {
+                        completedTasks[taskIndex].time = parseFloat(totalMinutes);
+                    }
+
+                    // 启用重置按钮
+                    resetButton.disabled = false;
+                    resetButton.classList.add('enabled');
+
+                    // 已完成任务移到列表底部
+                    moveCompletedTaskToBottom(taskItem);
+                    
+                    // 完成任务后保存到localStorage
+                    saveTasksToLocalStorage();
+                });
+            });
+
+            // 精准更新计时器函数
+            function updateTimer() {
+                if (isPaused) return;
+                // 计算已流逝时间（毫秒）
+                const elapsedMs = pauseTime + (Date.now() - startTime);
+                const elapsedSeconds = Math.floor(elapsedMs / 1000);
+                const minutes = Math.floor(elapsedSeconds / 60);
+                const seconds = elapsedSeconds % 60;
+                // 格式化显示
+                const formatMinutes = minutes.toString().padStart(2, '0');
+                const formatSeconds = seconds.toString().padStart(2, '0');
+                timerElement.textContent = `${formatMinutes}:${formatSeconds}`;
+            }
+        }
+
+        // --------------------------
+        // 清空列表功能（增加保存逻辑）
+        // --------------------------
+        function clearTaskList() {
+            // 确认清空操作（防止误触）
+            if (!confirm('确定要清空所有任务吗？此操作不可恢复！')) {
+                return;
+            }
+
+            // 停止所有正在运行的计时器
+            const allTasks = taskList.querySelectorAll('.task-item');
+            allTasks.forEach(task => {
+                const timer = task.querySelector('.timer');
+                if (timer) {
+                    const intervalId = timer.dataset.intervalId;
+                    if (intervalId) {
+                        clearInterval(intervalId);
+                    }
+                }
+            });
+
+            // 清空任务列表DOM
+            taskList.innerHTML = '';
+            
+            // 清空已完成任务数组
+            completedTasks.length = 0;
+            
+            // 重置总结区域
+            summaryText.textContent = '今日还未完成任何任务';
+            
+            // 清空饼图
+            ctx.clearRect(0, 0, taskChart.width, taskChart.height);
+            
+            // 禁用重置按钮
+            resetButton.disabled = true;
+            resetButton.classList.remove('enabled');
+            
+            // 清空localStorage中的任务数据
+            localStorage.removeItem('todoList');
+        }
+
+        // --------------------------
+        // 初始化当前日期
+        // --------------------------
+        function initCurrentDate() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = now.getMonth() + 1; // 月份从0开始，需+1
+            const day = now.getDate();
+            // 格式化日期为：2026/2/12
+            const formattedDate = `${year}/${month}/${day}`;
+            dateElement.textContent = formattedDate;
+        }
+
+        // --------------------------
+        // 辅助函数：新任务插入到未完成任务顶部
+        // --------------------------
+        function insertNewTaskToTop(newTask) {
+            // 找到第一个未完成且未星标的任务
+            const uncompletedTasks = taskList.querySelectorAll('.task-item[data-completed="false"]');
+            if (uncompletedTasks.length > 0) {
+                // 优先插入到星标任务之后，普通未完成任务之前
+                let firstNonStarredUncompleted = null;
+                for (let task of uncompletedTasks) {
+                    if (task.dataset.starred === 'false') {
+                        firstNonStarredUncompleted = task;
+                        break;
+                    }
+                }
+                if (firstNonStarredUncompleted) {
+                    taskList.insertBefore(newTask, firstNonStarredUncompleted);
+                } else {
+                    // 所有未完成都是星标，插入到最后一个星标之后
+                    taskList.insertBefore(newTask, uncompletedTasks[uncompletedTasks.length]);
+                }
+            } else {
+                // 没有未完成任务，插入到列表顶部
+                taskList.insertBefore(newTask, taskList.firstChild);
+            }
+        }
+
+        // --------------------------
+        // 辅助函数：已完成任务移到列表底部
+        // --------------------------
+        function moveCompletedTaskToBottom(completedTask) {
+            taskList.removeChild(completedTask);
+            taskList.appendChild(completedTask);
+        }
+
+        // --------------------------
+        // 辅助函数：重新排序任务（星标→普通未完成→已完成）
+        // --------------------------
+        function reorderTasks() {
+            // 收集所有任务
+            const allTasks = Array.from(taskList.querySelectorAll('.task-item'));
+            // 清空列表
+            taskList.innerHTML = '';
+            
+            // 排序规则：星标未完成 → 普通未完成 → 已完成
+            const starredUncompleted = allTasks.filter(t => t.dataset.starred === 'true' && t.dataset.completed === 'false');
+            const normalUncompleted = allTasks.filter(t => t.dataset.starred === 'false' && t.dataset.completed === 'false');
+            const completed = allTasks.filter(t => t.dataset.completed === 'true');
+
+            // 重新添加到列表
+            starredUncompleted.forEach(t => taskList.appendChild(t));
+            normalUncompleted.forEach(t => taskList.appendChild(t));
+            completed.forEach(t => taskList.appendChild(t));
+            
+            // 排序后保存到localStorage
+            saveTasksToLocalStorage();
+        }
+
+        // --------------------------
+        // 今日总结功能
+        // --------------------------
+        summaryButton.addEventListener('click', generateSummary);
+
+        function generateSummary() {
+            if (completedTasks.length === 0) {
+                summaryText.textContent = '今日还未完成任何任务';
+                ctx.clearRect(0, 0, taskChart.width, taskChart.height);
+                return;
+            }
+
+            // 启用重置按钮
+            resetButton.disabled = false;
+            resetButton.classList.add('enabled');
+
+            const totalCompleted = completedTasks.length;
+            const totalTime = completedTasks.reduce((sum, task) => sum + task.time, 0).toFixed(1);
+            summaryText.textContent = `今日完成了${totalCompleted}件事，共计耗时${totalTime}分钟`;
+            drawPieChart();
+        }
+
+        // --------------------------
+        // 重置今日总结功能
+        // --------------------------
+        resetButton.addEventListener('click', generateSummary); // 重置就是重新生成
+
+        // --------------------------
+        // 绘制饼图函数
+        // --------------------------
+        function drawPieChart() {
+            taskChart.width = taskChart.parentElement.clientWidth;
+            taskChart.height = taskChart.parentElement.clientHeight;
+            ctx.clearRect(0, 0, taskChart.width, taskChart.height);
+
+            const colors = [
+                '#90cdf4', '#fbb6ce', '#c6f6d5', '#fefcbf', '#fed7d7',
+                '#82BAFF', '#FFDDAF', '#FFC1E9', '#C3E88D', '#89DDFF'
+            ];
+
+            const totalTime = completedTasks.reduce((sum, task) => sum + task.time, 0);
+            let startAngle = 0;
+            const centerX = taskChart.width / 2;
+            const centerY = taskChart.height / 2;
+            const radius = Math.min(centerX, centerY) - 20;
+
+            completedTasks.forEach((task, index) => {
+                const sliceAngle = (task.time / totalTime) * 2 * Math.PI;
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY);
+                ctx.arc(centerX, centerY, radius, startAngle, startAngle + sliceAngle);
+                ctx.closePath();
+                ctx.fillStyle = colors[index % colors.length];
+                ctx.fill();
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                const textAngle = startAngle + sliceAngle / 2;
+                const textX = centerX + (radius + 10) * Math.cos(textAngle);
+                const textY = centerY + (radius + 10) * Math.sin(textAngle);
+                ctx.fillStyle = '#333';
+                ctx.font = '12px Microsoft YaHei';
+                ctx.textAlign = 'center';
+                ctx.fillText(`${task.name} (${task.time}分)`, textX, textY);
+
+                startAngle += sliceAngle;
+            });
+        }
+
+        // 窗口缩放重绘饼图
+        window.addEventListener('resize', () => {
+            if (completedTasks.length > 0) {
+                drawPieChart();
+            }
+            // 重新初始化日期（防止缩放导致日期丢失）
+            initCurrentDate();
+        });
+    </script>
+</body>
+</html>
